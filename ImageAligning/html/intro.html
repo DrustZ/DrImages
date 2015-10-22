@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="description" content="HW1 of CSCI3290" />
+  <meta name="keywords" content="your,keywords,goes,here" />
+  <meta name="author" content="Zhang Mingrui" />
+  <link rel="stylesheet" type="text/css" href="andreas00.css" media="screen,projection" />
+  <title>Image Alignment</title>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="header">
+        <br><br><br><br>
+        <h1><font color="white">Image Alignment</a></h1>
+        <br>
+        <p><strong>by Zhang Mingrui</strong></p>
+    </div>
+<hr>
+
+<table border="0" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/img1.jpg" align="right" width="360" height="340"/></td>
+<td><img src="img/img2.jpg" align="left" width="360" height="340"/></td>
+</tr>
+<tr>
+<td><img src="img/img3.jpg" align="right" width="360" height="340"/></td>
+<td><img src="img/img4.jpg" align="left" width="360" height="340"/></td>
+</tr>
+</table>
+    <div id="content">
+        <h2>Introduction</h2>
+                <p>Sergei Mikhailovich Prokudin-Gorskii (1863-1944)[1] [Сергей Михайлович Прокудин-Горский, in Russian] was a man well ahead of his time. The Prokudin-Gorskii collection consists of a sets of three black and white photographs captured using red, green, and blue filters. The objective of this project is to align these images and make one color image while minimizing visual artifacts.</p>
+
+        <p>My algorithm was successful in aligning all the images in the online Library of Congress data set. Above are the results.
+        </p>
+        <hr>
+
+        <h2>Algorithm Overview</h2>
+        <br>
+        <ul id="box">
+          <br>
+          <ul>1. Extract 3 channels (BGR channels) from the input</ul>
+          <ul>2. Calculate two displacement vectors (xBG,yBG), (xRG,yRG) for aligning the B channel (first) and R channel (third) to the G channel (second), and shift them based on the displacement vector</ul>
+          <ul>3. border cropping</ul>
+          <ul>4. Color correction</ul>
+          <ul>5. Combine 3 channels together to compose a color image</ul>
+          <br>
+        </ul>
+        <p>
+          <ol>
+            <li><h4>Extract 3 channels (BGR channels) from the input</h4> 
+The proper translation offset from green to blue and red to blue needs to be calculated for alignment.In this step, I simply cropped 1/3 height for each channel.</li>
+            <li><h4>Compute Image Pyramids</h4>
+An image pyramid is a collection of images - all arising from a single original image - that are successively downsampled until some desired stopping point is reached.This will be very efficient for searching the best align point.
+<br ><img src="img/Pyramids.png" style="display: block; margin-left: auto; margin-right: auto;"/><br> 
+Following the instruction on <a href="http://docs.opencv.org/doc/tutorials/imgproc/pyramids/pyramids.html">OpenCV doc</a>, I used the matrix <br><img src="img/matrix.png" style="display: block; margin-left: auto; margin-right: auto;"><br>
+to apply the algorithm.
+  Every layer is 1/4 size of its parent layer. And I made the first layer size 16 * 16. The amount of layers is calculated by <br><img src="img/formula.jpg" style="display: block; margin-left: auto; margin-right: auto;"><br>
+  Because each time we downsample an image, for one pixel, 8 pixels surrounding it will be dropped. Thus once we find the best pixel in one layer, we only need to search for 9 pixels in its parent layer to find the better pixel. Then the complexity of the algorithm is O(layernum*9*imgsize). In addition, if the size is under 1000*1000， I will make it search 5*5 pixels rather than 3*3 for better performance.
+  <br>
+  Time: for a jpg image, around 15s when using singlescale method. Using multi-scale method, the time is 0.5s.
+  </br>
+</li>
+ 
+            <li><h4>Unsharp Masks</h4>
+Unsharp masks are created to emphasize the edges in the images.Image with unsharp masks can perform better in alignment tasks. Thus I used unsharp masks for each layer of the pyramids. <br>
+To weight the different displacement vector, I used SSD method. I also tried normalized cross correlation, but the former one is better.</li>
+
+            <li><h4>Image Alignment</h4>
+After the two translation offsets (green to blue and red to blue) are computed, the image color channels are aligned into one color image.</li>
+
+            <li><h4>Automatic Cropping</h4>
+After the alignment, there're always color bands on the border. I crop the image border for better results.The detail is explained below.
+            </li>
+
+            <li><h4>Automatic Contrasting</h4>
+After cropping, I improved the color using automatic contrasting. The detial is explained below.</li>
+          </ol>
+        </p>
+    <hr>
+        <h2>Better Features: Unsharp Mask</h2>
+        <p>Unsharp masking (USM) is an image sharpening technique, it emphasizes the edges in an image because the difference will be greater in areas with higher contrast. This increases the performance of the minimum sum of squared differences metric.<a href="#1">[1]</a><a href="#2">[2]</a></p> 
+        <br><img src="img/unsharpmask.png" style="display: block; margin-left: auto; margin-right: auto;"><br>
+        
+        <h2>Automatic Cropping</h2>
+        <p>
+          <ol>
+            <ul><h4>First step: crop the border after alignment</h4><p>First, because of the offset of R G B during alignment, we need to first crop the lines that are not concatenated with both other 2 channels.</p>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/border_ori.jpg" align="right" width="400" height="340"/></td>
+<td><img src="img/border_step1.jpg" align="left" width="400" height="340"/></td>
+</tr>
+</table>
+</ul>
+            <ul><h4>Second step: drop lines that using search</h4><p>Next, we will turn the image to grayscale image, and search 10% of each side region, from border to center, calculating the average value of each single line, and crop the lines whose standard deviation is under 0.15(Magic number). If we meet over 3 lines whose std is above 0.15, then we consider them as the normal image lines, and break the procedure.</p>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/bd1.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/bd2.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/bd3.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/bd4.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+</ul>
+          </ol>
+            </p>
+
+        <h2>Automatic Contrasting</h2>
+        <p>After cropping, automatic contrasting is performed in order to correct the colors in the image.Following the instruction on Wikipedia, I first used Von Kries's method<a href="#3">[3]</a>. Convert the RGB image to LSM image<a href="#4">[4]</a><a href="#5">[5]</a>, and then apply the scaling method.Then convert back.<br>
+        However, this method is time-consuming, and the results are not so apparently improved(and not so natural).</p>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/ori_lms.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/lms.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+        <p>Then I used another method, which is called "Lux" filter in "Instagram".<a href="#6">[6]</a>
+        The basic idea is to use the histogram. We collect the 2% and 98% grey-value percentile, and solve two equation, then apply the scale on each pixel. The result are as follow:
+        </p>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/ori_lms.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/his2.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/ori1.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/his1.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+
+        <h2>Extra Data</h2>
+        <p>The algorithm generally performed well on other Prokudin-Gorskii images from the Library of Congress archive that were tested. Even most of the images with some damage were successfully aligned.
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/extra2.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/extra3.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+</p>
+<hr>
+<p>
+
+<h4>Source of Title Image</h4>
+
+Giza, Pyramids of. [Photograph]. In Encyclopædia Britannica. Retrieved from http://www.britannica.com/EBchecked/media/108145/Pyramids-of-Giza-southwest-of-Cairo-Egypt
+<p>
+<hr>
+<h4>Reference</h4>
+<ul>[1]<a id="1" href="https://en.wikipedia.org/wiki/Unsharp_masking">Wikipedia: Unsharp Masking</a></ul>
+<ul>[2]<a id="2" href="http://www.cnblogs.com/Imageshop/archive/2013/05/19/3086388.html">Blog: Unsharp Masking Implementation</a></ul>
+<ul>[3]<a id="3" href="https://en.wikipedia.org/wiki/Color_balance">Wikipedia: Color Banlance</a></ul>
+<ul>[4]<a id="4" href="https://ssodelta.wordpress.com/tag/rgb-to-lms/">Dichromacy, or How Dogs View the World</a></ul>
+<ul>[5]<a id="5" href="http://biecoll.ub.uni-bielefeld.de/volltexte/2007/52/pdf/ICVS2007-6.pdf">Intelligent modification for the daltonization process of digitized paintings</a></ul>
+<ul>[6]<a id="6" href="http://stackoverflow.com/questions/9744255/instagram-lux-effect">instagram-lux-effect</a></ul>
+    </div>
+</div>
+</body>
+</html>
+

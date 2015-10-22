@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="description" content="HW2 of CSCI3290" />
+  <meta name="keywords" content="your,keywords,goes,here" />
+  <meta name="author" content="Zhang Mingrui" />
+  <link rel="stylesheet" type="text/css" href="andreas00.css" media="screen,projection" />
+  <title>Color Transfer & Contrast Preserving Decolorization</title>
+</head>
+
+<body>
+<div id="wrap">
+    <div id="header">
+        <br><br><br><br>
+        <h1><font color="white">Color Transfer & Decolorization</a></h1>
+        <br>
+        <p><strong>by Zhang Mingrui</strong></p>
+    </div>
+<hr>
+
+<table border="0" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/sunset_wood.jpg" align="right" width="360" height="270"/></td>
+<td><img src="img/o1.jpg" align="left" width="360" height="270"/></td>
+</tr>
+<tr>
+<td><img src="img/2.png" align="right" width="360" height="360"/></td>
+<td><img src="img/im2gray1.jpg" align="left" width="360" height="360"/></td>
+</tr>
+</table>
+    <div id="content">
+        <h2>Introduction</h2>
+                <p>Color Transfer is a process that transfers one image's color to another. The method used here is based on <a href="http://www.thegooch.org/Publications/PDFs/ColorTransfer.pdf" target="_blank">Color Transfer between Images</a>[Reinhard et al., 2001]. he algorithm itself is extremely efficient (much faster than histogram based methods), requiring only the mean and standard deviation of pixel intensities for each channel in the L*a*b* color space.</p>
+                <p>Color Decolorization is a process that transfer a color image to a grayscale image. During the process, color information such as contrast may lost. The algorithm in the project will conserve the information as possible.</p>
+
+        <p>Above are the results. <br>
+        <strong>Top Left</strong>:transfer from woods to sunset <strong>Top right</strong>:transfer from sunset to oceanday.<br> <strong>Bottom left</strong>:original color image 1 <strong>Bottom left</strong>:decolorization. 
+        </p>
+        <hr>
+
+        <h2>Algorithm Overview</h2>
+        <br>
+        <h3>Color Transfer</h3>
+        <br>
+        <ul id="box">
+          <br>
+          <ul>1. Transfer rgb color space to L*a*b</ul>
+          <ul>2. Calculate Mean and Standard Deviation for each channel of source and target image in Lab- color space</ul>
+          <ul>3. Transfer back from L*a*b to rgb</ul>
+          <br>
+        </ul>
+        <p>
+          <ol>
+            <li><h4>Color Space: Lab <-> RGB</h4>
+            I've tried the two methods. <strong>The first</strong> is RGB to LMS to Lab. It follws the PDF's instruction. However, the result seems not so good:
+<br ><img src="img/o2.jpg" width="500" style="display: block; margin-left: auto; margin-right: auto; "/><br> 
+Contrasted to the built-in method:
+<img src="img/o1.jpg" width="500" style="display: block; margin-left: auto; margin-right: auto;"><br>
+What's worse, when transfer storm's color to autumn, the result is vague:<br>
+<img src="img/strom_autumn.jpg" width="500" style="display: block; margin-left: auto; margin-right: auto;"><br>
+<br><p>Thus, I used another method to do the transfer. You can find it <a href="http://www.easyrgb.com/?X=MATH" target="_blank">here</a>. Following the formula there, I eventually succeed in transfer good results, which are just like build-in method's results:</p>
+<img src="img/stromautum.jpg" width="500" style="display: block; margin-left: auto; margin-right: auto;"><br>
+The image looks much better.
+  <br>
+  Time: for a jpg image, less than 1s when using this method(I only used * for color space transfer).
+  </br><br>
+  <table border="0" cellspacing="0" cellpadding="0" >
+<tr><td><strong>SOURCE IMAGE</strong></td> <td><strong> TARGET IMAGE </strong></td> <td><strong> RESULT </strong></td></tr>
+<tr><td><img src="img/woods.jpg" width="300"></td> <td><img src="img/ocean_sunset.jpg" width="300"></td> <td><img src="img/sunset_wood.jpg" width="300"></td></tr>
+<tr><td><img src="img/woods.jpg" width="300"></td> <td><img src="img/fallingwater.jpg" width="300"></td> <td><img src="img/wood_fall.jpg" width="300"></td></tr>
+<tr><td><img src="img/ocean_day.jpg" width="300"></td> <td><img src="img/storm.jpg" width="300"></td> <td><img src="img/stormday.jpg" width="300"></td></tr>
+</table>
+</li>
+ <br>
+</ol>
+<h3>Decolorization</h3>
+<hr>
+<br>
+        <h3>METHOD1 : <a href="http://www.cs.northwestern.edu/~ago820/color2gray/color2gray.pdf">color2gray</a></h3><br>
+        <ul id="box">
+          <br>
+          <ul>1. Convert the input image to Lab space</ul>
+          <ul>2. Compute 𝛿𝑝,𝑞 for each two neighboring pixels</ul>
+          <ul>3. Constructing matrix A and vectors G and 𝛥</ul>
+          <ul>4. Solve the objective function to get G</ul>
+          <ul>Evaluation: Color Contrast Preserving Ratio (CCPR)</ul>
+          <br>
+        </ul>
+<ol>
+            <li><h4>Compute 𝛿𝑝,𝑞 for each two neighboring pixels</h4>
+𝛿𝑝,𝑞 is defined as 
+<img src="img/form1.png" width="" style="display: block; margin-left: auto; margin-right: auto;"><br>
+and I used <code><strong>imfilter</strong></code> to calculate each channel's difference then calculate the final difference using <code><strong>arrayfun</strong></code>, which is efficient.
+</li>
+
+            <li><h4>Constructing matrix A and vectors G and 𝛥</h4>
+            If 𝛿xy is the original image's difference, and gxy is the grayscale image's difference, then our goal is to minimize the difference between 𝛿xy and gxy:
+<img src="img/form2.png" width="" style="display: block; margin-left: auto; margin-right: auto;"><br>
+If we use G to represent the grayscale image's pixels:
+<img src="img/form3.png" width="" style="display: block; margin-left: auto; margin-right: auto;"><br>
+Then we will have a equation AG=𝛥, where 𝛥 denotes the differences of color image, and AG denotes the corresponding pixel pair's differences:
+<img src="img/form4.png" width="" style="display: block; margin-left: auto; margin-right: auto;"><br>
+𝛥 and G is easy to get. How to get A? A is a big matrix of (2mn-m-n)*mn, for the last row and the last column's pixels' differences are 0(They don't have neighbors).So first I made a sparse matrix like(using <code><strong>speye</strong></code>):<br>
+<img src="img/form4.5.png" width="" style="display: block; margin-left: auto; margin-right: auto;">
+Then I added another matrix. After that, I removed the last column's pixels' corresponding row:
+<br>
+<img src="img/form5.png" width="" style="display: block; margin-left: auto; margin-right: auto;">
+It represent the x-difference matrix. Then I did the same thing to the y's matrix.<p>
+Finally, I used <code><strong>cat</strong></code> to concatenate the two matrix.</p>
+Notice, I used the row-first order, not the column-first order(So I have to transpose before <code>reshape</code>).
+</li>
+
+            <li><h4>Solve the objective function to get G</h4>
+              I used both <code>inv()</code> and "\" to solve the matrix. Interestingly, when I use <code>inv()</code>, matlab automaticly recommand me to use "\".<br>
+              However, inv() can only be used on squared matrix. To test the performance, I have to cut A's shape, which I needn't do when using "\".<br>
+              <code>inv()</code> seems less precise and more time-consuming. The time is 1.0s when I use "\"; however, I waited for around 5 mins but it is still computing when using <code>inv()</code>. 
+            </li>
+</ol>
+        </p>
+    <hr>
+        <h3>Evaluation: Color Contrast Preserving Ratio (CCPR)</h3>
+        <p>CCPR is average 0.617432 using the algorithm. For different 𝜏, the CCPR is as follows:</p> 
+<table border="0" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr><td><strong> 𝜏 </strong></td> <td><strong> CCPR</strong></td></tr>
+<tr><td>1</td> <td>0.965075</td></tr>
+<tr><td>2</td> <td>0.980125</td></tr>
+<tr><td>3</td> <td>0.980329</td></tr>
+<tr><td>4</td> <td>0.979577</td></tr>
+<tr><td>5</td> <td>0.979558</td></tr>
+<tr><td>6</td> <td>0.985383</td></tr>
+<tr><td>7</td> <td>0.990223</td></tr>
+<tr><td>8</td> <td>0.993426</td></tr>
+<tr><td>9</td> <td>0.993338</td></tr>
+<tr><td>10</td> <td>0.993676</td></tr>
+<tr><td>11</td> <td>0.995451</td></tr>
+<tr><td>12</td> <td>0.995514</td></tr>
+<tr><td>13</td> <td>0.995431</td></tr>
+<tr><td>14</td> <td>0.995733</td></tr>
+<tr><td>15</td> <td>0.995528</td></tr>
+</table>
+
+    <hr>
+        <h3>METHOD2 : <a href="http://www.cse.cuhk.edu.hk/~leojia/papers/decolorization_iccp12.pdf">Contrast Preserving Decolorization</a></h3><br>
+          <ul id="box">
+          <br>
+          <ul>1. Convert the input image to Lab space</ul>
+          <ul>2. Compute 𝛿𝑝,𝑞 for each two neighboring pixels</ul>
+          <ul>3. Construct parametric model and calculate each param's pixel difference</ul>
+          <ul>4. Initiate w and calculate β</ul>
+          <ul>5. Iterativly update w and β</ul>
+          <ul>6. Use weights to form the grayscale image</ul>
+          <br>
+        </ul>
+        <p>In this method, we uses Parametric Color-to-Gray Model, together with Bimodal Contrast-Preserving Objective Function to better calculate each grayscale pixel's value. For details, pleas refer to the article and the following statements.
+          <ol>
+            <li><h4>Construct parametric model and calculate each param's pixel difference</h4>
+            <p>We use {R,G,B,RG,RB,GB,RR,GG,BB} to parameterize the grayscale space. In this way, we can define w{R,G,B,RG,RB,GB,RR,GG,BB} as each param's weight, then we only need to solve nine parameters, rather than image-size-large parameters.So for each grayscale pixel pair, the difference is:</p>
+<img src="img/form6.png" height="120" ="" style="display: block; margin-left: auto; margin-right: auto;">
+and for clear explaination, please see the images below:
+<img src="img/rgb.png" height="200" ="" style="display: block; margin-left: auto; margin-right: auto;">
+<img src="img/rgb2.png" height="300" ="" style="display: block; margin-left: auto; margin-right: auto;">
+</li>
+            <li><h4>Bimodal Contrast-Preserving Objective Function</h4>
+            <ul><h4>Weak Color Order</h4>
+            <p>Some color pairs can be clearly ordered in terms of brightness. We say cx ≤cy ⇐⇒ rx ≤ ry & gx ≤ gy & bx ≤ by.</p> However, other color pairs don't have such strong order. What's more, in different color space, color pairs' order may change. Thus for these pairs, we introduce the weak color order. When use the Gaussian function to solve the problem, we use <br>
+<img src="img/form7.png" height="60" ="" style="display: block; margin-left: auto; margin-right: auto;">
+            to represent the total distance between grayscale and color images. For strong order pairs, we use G(𝛿x,y,σ^2) directly, but for weak order color pairs, we use 
+<img src="img/form8.png" height="60" ="" style="display: block; margin-left: auto; margin-right: auto;">
+            </ul>
+            <ul><h4>Iteration</h4>
+            <p>To solve the Gaussian function(find the minimum), we transform the function to</p>
+<img src="img/energy.png" height="60" ="" style="display: block; margin-left: auto; margin-right: auto;">
+and to maximize the energy, we have the derivative <img src="img/form9.png" width="80">. Let's first define
+<img src="img/form11.png" height="70" ="" style="display: block; margin-left: auto; margin-right: auto;">
+Then we'll have a equation 
+<img src="img/form10.png" height="80" ="" style="display: block; margin-left: auto; margin-right: auto;">
+            </ul>
+    <p>The average time per image is 2.7s.</p>
+    <p>Those are the results(notice: I used different sigma to generate them):</p>
+<table border="1" cellspacing="0" cellpadding="0">
+<tr><td><img src="img/6.png" width="300"></td> <td><img src="img/best2.jpg" width="300"></td> <td><img src="img/best15.jpg" width="300"></td></tr>
+<tr><td>Original Image</td> <td>Result after 2 iterations</td> <td>Result after 15 iterations</td></tr>
+<tr><td><img src="img/9.png" width="300"></td> <td><img src="img/flower5.jpg" width="300"></td> <td><img src="img/flower25.jpg" width="300"></td></tr>
+<tr><td>Original Image</td> <td>Result σ = 5</td> <td>Result σ = 25</td></tr>
+</table>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/5.png" align="right" width="400" height="360"/></td>
+<td><img src="img/butterfly.jpg" align="left" width="400" height="360"/></td>
+</tr>
+</table>
+        <h4>OTHER ATTEMPTS</h4>  
+        <p>I also tried to use {L,a,b,La,Lb,ab,LL,aa,bb} to represent the params, but the result is not good.</p>
+<table border="1" cellspacing="0" cellpadding="0">
+<tr><td><img src="img/4.png" width="300"></td> <td><img src="img/labs.jpg" width="300"></td> <td><img src="img/balll.jpg" width="300"></td></tr>
+<tr><td>Original Image</td> <td>Result using L*a*b* params</td> <td>Result using rgb params</td></tr>
+</table></li>
+        <h3>Evaluation: Color Contrast Preserving Ratio (CCPR)</h3>
+        <p>CCPR is average 0.605751 using the algorithm. The CCPR drops may due to the theta value's variance.For different 𝜏, the CCPR is as follows:</p> 
+<table border="0" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr><td><strong> 𝜏 </strong></td> <td><strong> CCPR</strong></td></tr>
+<tr><td>1</td> <td>0.856320</td></tr>
+<tr><td>2</td> <td>0.899983</td></tr>
+<tr><td>3</td> <td>0.918360</td></tr>
+<tr><td>4</td> <td>0.938911</td></tr>
+<tr><td>5</td> <td>0.964578</td></tr>
+<tr><td>6</td> <td>0.984430</td></tr>
+<tr><td>7</td> <td>0.994165</td></tr>
+<tr><td>8</td> <td>0.997349</td></tr>
+<tr><td>9</td> <td>0.998402</td></tr>
+<tr><td>10</td> <td>0.998012</td></tr>
+<tr><td>11</td> <td>0.998050</td></tr>
+<tr><td>12</td> <td>0.997987</td></tr>
+<tr><td>13</td> <td>0.997335</td></tr>
+<tr><td>14</td> <td>0.997255</td></tr>
+<tr><td>15</td> <td>0.996897</td></tr>
+</table>
+  </ol>
+</p>
+<hr>
+        <h3>METHOD3 : <a href="http://www.cse.cuhk.edu.hk/~leojia/papers/decolorization_iccp12.pdf">Fast Contrast Preserving Decolorization</a></h3><br>
+        <p>If we only use {R,G,B} to parameterize the grayscale image, and use search method to find the max value, then the procedure will be faster, while small quality loss can be resonable.</p>
+        <p>In this way, we needn't to iterate anymore. And for one image, the time is around 0.9s.</p>
+        <p>Below are the results:</p>
+<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="img/ball.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/balll.jpg" align="left" width="400" height="360"/></td>
+</tr>
+<tr>
+<td>The second method</td><td>The faster method</td>
+</tr>
+<tr>
+<td><img src="img/best15.jpg" align="right" width="400" height="360"/></td>
+<td><img src="img/simple.jpg" align="left" width="400" height="360"/></td>
+</tr>
+<tr>
+<td>The second method</td><td>The faster method</td>
+</tr>
+</table>
+
+<h4>Source of Title Image</h4>
+Download the dataset from <a href="http://www.cse.cuhk.edu.hk/leojia/projects/color2gray/index.html" target="_blank">http://www.cse.cuhk.edu.hk/leojia/projects/color2gray/index.html</a>
+<br><br><br><br><br>
+</div>
+</div>
+</body>
+</html>
+
