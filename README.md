@@ -12,9 +12,7 @@ example:
 <h3>High Contrast Decolorization</h3>
 <ul>
 	Preserve the contrast information as much as possible when transfer to black-white image.
-  <table border="0" cellspacing="0" cellpadding="0" >
-	<tr><td><img src="http://f1.topitme.com/1/11/79/114553462205679111o.jpg" width="300"></td> <td><img src="http://f3.topitme.com/3/aa/72/114553461620472aa3o.jpg" width="300"></td> <td><img src="http://f9.topitme.com/9/5e/1a/1145534610ebb1a5e9o.jpg" width="300"></td></tr>
-</table>
+  	<img src="http://f6.topitme.com/6/90/27/1145535066fb427906o.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
 
 </ul>
 <h3>Alpha Blending</h3>
