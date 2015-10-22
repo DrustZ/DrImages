@@ -18,7 +18,8 @@ example:
 <h3>Alpha Blending</h3>
 <ul>
 	Alpha blending using Laplacian-pyramid.
-	<img src="http://docs.opencv.org/master/orapple.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
+	<img src="http://f6.topitme.com/6/90/27/1145535066fb427906o.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
+	
 </ul>
 <h3>Poisson Blending</h3>
 <ul>
