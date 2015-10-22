@@ -7,18 +7,22 @@
 Transfer color from one image to another.
 <br>
 example:
-
+<img src="http://f6.topitme.com/6/90/27/1145535066fb427906o.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
 </ul>
 <h3>High Contrast Decolorization</h3>
 <ul>
 	Preserve the contrast information as much as possible when transfer to black-white image.
-  	<img src="http://f6.topitme.com/6/90/27/1145535066fb427906o.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
-
+	<table border="1" cellspacing="0" cellpadding="0" style="margin-left:auto;margin-right:auto;text-align:left">
+<tr>
+<td><img src="http://www.cse.cuhk.edu.hk/leojia/projects/color2gray/imgs/11.png" align="right" width="400" height=""/></td>
+<td><img src="http://www.cse.cuhk.edu.hk/leojia/projects/color2gray/imgs/11_r.png" align="left" width="400" height=""/></td>
+</tr>
+</table>
 </ul>
 <h3>Alpha Blending</h3>
 <ul>
 	Alpha blending using Laplacian-pyramid.
-	<img src="http://f6.topitme.com/6/90/27/1145535066fb427906o.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
+	<img src="http://docs.opencv.org/master/orapple.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
 	
 </ul>
 <h3>Poisson Blending</h3>
