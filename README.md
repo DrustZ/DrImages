@@ -7,7 +7,7 @@
 Transfer color from one image to another.
 <br>
 example:
-<img src="http://f6.topitme.com/6/90/27/1145535066fb427906o.jpg" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
+<img src="https://raw.githubusercontent.com/damianfral/colortransfer/master/images/oceansunset-oceanday.png" height="" width="" style="display: block; margin-left: auto; margin-right: auto;">
 </ul>
 <h3>High Contrast Decolorization</h3>
 <ul>
